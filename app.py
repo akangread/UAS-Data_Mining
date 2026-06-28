@@ -70,8 +70,9 @@ run_grid = st.sidebar.checkbox("Jalankan Grid Search Parameter", value=False)
 
 # ─── PREPROCESSING ─────────────────────────────────────────────────────────────
 @st.cache_data
-def build_kel(df_aktif: pd.DataFrame) -> pd.DataFrame:
-    kel = df_aktif.groupby("kelurahan").agg(
+def build_kel_all(df: pd.DataFrame):
+    """Agregasi SEMUA data (aktif + tidak aktif) – untuk statistik & chart."""
+    kel_all = df.groupby("kelurahan").agg(
         wilayah=("wilayah", "first"),
         kecamatan=("kecamatan", "first"),
         latitude=("latitude", "mean"),
@@ -80,11 +81,14 @@ def build_kel(df_aktif: pd.DataFrame) -> pd.DataFrame:
         jumlah_aktif=("is_aktif", "sum"),
         jumlah_tidak_aktif=("is_aktif", lambda x: (~x).sum()),
     ).reset_index()
-    kel["pct_aktif"] = (kel["jumlah_aktif"] / kel["total_bank_sampah"] * 100).round(1)
-    kel = kel[~kel["wilayah"].str.contains("KAB. ADM. KEP. SERIBU", case=False, na=False)].reset_index(drop=True)
-    return kel
+    kel_all["pct_aktif"] = (kel_all["jumlah_aktif"] / kel_all["total_bank_sampah"] * 100).round(1)
+    kel_all["ada_tidak_aktif"] = kel_all["jumlah_tidak_aktif"] > 0
+    kel_all = kel_all[~kel_all["wilayah"].str.contains("KAB. ADM. KEP. SERIBU", case=False, na=False)].reset_index(drop=True)
+    # Subset untuk clustering: hanya kelurahan yang punya bank sampah aktif
+    kel = kel_all[kel_all["jumlah_aktif"] > 0].copy().reset_index(drop=True)
+    return kel_all, kel
 
-kel = build_kel(df_aktif)
+kel_all, kel = build_kel_all(df)
 coords = kel[["latitude", "longtitude"]].values
 coords_rad = np.radians(coords)
 
@@ -98,16 +102,20 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 with tab1:
     st.subheader("Statistik Umum")
 
-    col1, col2, col3, col4 = st.columns(4)
+    total_aktif = int(df["is_aktif"].sum())
+    total_tidak_aktif = int((~df["is_aktif"]).sum())
+    col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("Total Data", f"{len(df):,}")
-    col2.metric("Bank Sampah Aktif", f"{df['is_aktif'].sum():,}")
-    col3.metric("Total Kelurahan", f"{len(kel):,}")
-    col4.metric("Total Wilayah", f"{kel['wilayah'].nunique()}")
+    col2.metric("Bank Sampah Aktif", f"{total_aktif:,}")
+    col3.metric("Bank Sampah Tidak Aktif", f"{total_tidak_aktif:,}")
+    col4.metric("Total Kelurahan (semua)", f"{len(kel_all):,}")
+    col5.metric("Total Wilayah", f"{kel_all['wilayah'].nunique()}")
 
     st.divider()
-    st.subheader("Distribusi Per Wilayah")
+    st.subheader("Distribusi Per Wilayah (Semua Kelurahan)")
 
-    wil = kel.groupby("wilayah").agg(
+    # Gunakan kel_all agar kelurahan tidak aktif ikut tampil
+    wil = kel_all.groupby("wilayah").agg(
         total_bank_sampah=("total_bank_sampah", "sum"),
         jumlah_aktif=("jumlah_aktif", "sum"),
         jumlah_tidak_aktif=("jumlah_tidak_aktif", "sum"),
@@ -117,7 +125,7 @@ with tab1:
         wil["wilayah"].str.replace("KOTA ADM. ", "").str.replace("KAB. ADM. ", "")
     )
 
-    fig, axes = plt.subplots(1, 2, figsize=(16, 5))
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
     x = np.arange(len(wil))
     w = 0.35
@@ -125,25 +133,41 @@ with tab1:
     axes[0].bar(x + w / 2, wil["jumlah_tidak_aktif"], w, label="Tidak Aktif", color="#e74c3c")
     axes[0].set_xticks(x)
     axes[0].set_xticklabels(wil["wilayah_short"], rotation=30, ha="right", fontsize=9)
-    axes[0].set_title("Jumlah Bank Sampah Aktif vs Tidak Aktif per Wilayah", fontweight="bold")
+    axes[0].set_title("Jumlah Bank Sampah Aktif vs Tidak Aktif\nper Wilayah (Semua Kelurahan)", fontweight="bold")
     axes[0].set_ylabel("Jumlah Bank Sampah")
     axes[0].legend()
     axes[0].grid(axis="y", alpha=0.3)
 
-    kel_sorted = kel.sort_values("total_bank_sampah", ascending=False).head(20)
-    colors_bar = ["#2ecc71" if p >= 50 else "#e74c3c" for p in kel_sorted["pct_aktif"]]
+    # Top 20 dari kel_all (termasuk kelurahan yang semua tidak aktif)
+    kel_sorted = kel_all.sort_values("total_bank_sampah", ascending=False).head(20)
+    colors_bar = [
+        "#e74c3c" if r["jumlah_aktif"] == 0
+        else ("#f39c12" if r["pct_aktif"] < 50 else "#2ecc71")
+        for _, r in kel_sorted.iterrows()
+    ]
     axes[1].barh(kel_sorted["kelurahan"], kel_sorted["total_bank_sampah"], color=colors_bar)
     axes[1].set_xlabel("Total Bank Sampah")
     axes[1].set_title(
-        "Top 20 Kelurahan – Bank Sampah Terbanyak\n(hijau=mayoritas aktif, merah=mayoritas tidak aktif)",
+        "Top 20 Kelurahan – Bank Sampah Terbanyak\n(🟢≥50% Aktif | 🟠<50% Aktif | 🔴Semua Tidak Aktif)",
         fontweight="bold",
     )
     axes[1].grid(axis="x", alpha=0.3)
     axes[1].invert_yaxis()
+    patches_legend = [
+        mpatches.Patch(color="#2ecc71", label="≥50% Aktif"),
+        mpatches.Patch(color="#f39c12", label="<50% Aktif"),
+        mpatches.Patch(color="#e74c3c", label="Semua Tidak Aktif"),
+    ]
+    axes[1].legend(handles=patches_legend, fontsize=9)
 
     plt.tight_layout()
     st.pyplot(fig)
     plt.close(fig)
+
+    st.caption(
+        f"Total bank sampah aktif: **{wil['jumlah_aktif'].sum():,}** | "
+        f"Total bank sampah tidak aktif: **{wil['jumlah_tidak_aktif'].sum():,}**"
+    )
 
 # ─── TAB 2: K-DISTANCE PLOT ───────────────────────────────────────────────────
 with tab2:
@@ -300,14 +324,16 @@ kel_final = kel.copy()
 kel_final["cluster"] = labels_final
 
 cluster_avg = kel_final.groupby("cluster")["total_bank_sampah"].mean()
+p33 = kel_final["total_bank_sampah"].quantile(0.33)
+p66 = kel_final["total_bank_sampah"].quantile(0.66)
 
 def label_cluster(row):
     if row["cluster"] == -1:
         return "Noise (Terisolasi)"
     avg = cluster_avg.get(row["cluster"], 0)
-    if avg >= 40:
+    if avg >= p66:
         return "Padat Tinggi"
-    elif avg >= 20:
+    elif avg >= p33:
         return "Padat Sedang"
     return "Padat Rendah"
 
