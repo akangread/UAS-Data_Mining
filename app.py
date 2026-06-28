@@ -67,8 +67,8 @@ if not data_bank_sampah.empty:
         st.header("⚙️ Parameter DBSCAN")
         st.markdown("Geser *slider* di bawah untuk melihat perubahan klaster secara *real-time*.")
         
-        eps_val = st.slider("Radius Pencarian (Epsilon)", min_value=0.10, max_value=1.00, value=0.40, step=0.05)
-        min_samples_val = st.slider("Min Titik (Min Samples)", min_value=5, max_value=50, value=10, step=1)
+        eps_val = st.slider("Radius Pencarian (Epsilon)", min_value=1, max_value=10, value=0.40, step=0.10)
+        min_samples_val = st.slider("Min Titik (Min Samples)", min_value=1, max_value=10, value=10, step=1)
         
         st.markdown("---")
         st.markdown("### 👥 Tim Newton (STT-NF)")
