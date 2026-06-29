@@ -34,18 +34,8 @@ def load_data(path: str) -> pd.DataFrame:
     return df
 
 DEFAULT_CSV = "banksampah_dkijkt.csv"
-try:
-    if uploaded:
-        df = load_data(uploaded)
-    else:
-        df = load_data(DEFAULT_CSV)
-    st.sidebar.success(f"✅ Data dimuat: {len(df):,} baris")
-except FileNotFoundError:
-    st.error(
-        "⚠️ File `banksampah_dkijkt.csv` tidak ditemukan di direktori yang sama dengan `app.py`.\n\n"
-        "Silakan upload file CSV melalui sidebar."
-    )
-    st.stop()
+
+df = load_data(DEFAULT_CSV)
 
 df_aktif = df[df["is_aktif"]].copy()
 
