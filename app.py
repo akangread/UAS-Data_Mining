@@ -430,7 +430,7 @@ with tab5:
 
     st.divider()
     st.subheader("Ringkasan Klaster")
-    n_cl_f, n_noise_f, noise_ratio_f, sil_f, dbi_f, ch_f = cluster_metrics(coords_rad, labels_final)
+    n_cl_f, n_noise_f, noise_ratio_f, sil_f, dbi_f = cluster_metrics(coords_rad, labels_final)
 
     summary = kel_final.groupby(["cluster", "label"]).agg(
         jumlah_kelurahan=("kelurahan", "count"),
