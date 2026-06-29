@@ -213,8 +213,8 @@ def cluster_metrics(coords_rad, labels):
         sil = round(silhouette_score(coords_rad, labels, metric="haversine"), 4)
         dbi = round(davies_bouldin_score(coords_rad, labels), 4)
     else:
-        sil = dbi = ch = -1
-    return n_clusters, n_noise, noise_ratio, sil, dbi, ch
+        sil = dbi = -1
+    return n_clusters, n_noise, noise_ratio, sil, dbi
 
 # ─── TAB 3: EVALUASI PARAMETER ────────────────────────────────────────────────
 with tab3:
@@ -230,7 +230,7 @@ with tab3:
             for eps in eps_values:
                 for ms in ms_values:
                     labels = run_dbscan(coords_rad, eps, ms)
-                    n_cl, n_noise, noise_ratio, sil, dbi, ch = cluster_metrics(coords_rad, labels)
+                    n_cl, n_noise, noise_ratio, sil, dbi = cluster_metrics(coords_rad, labels)
                     if n_cl > 1:
                         rows.append({
                             "eps_km": eps, "min_samples": ms,
@@ -282,7 +282,7 @@ with tab3:
     st.divider()
     st.subheader(f"Preview Klaster (eps={eps_km} km, min_samples={min_samples})")
     labels_now = run_dbscan(coords_rad, eps_km, min_samples)
-    n_cl, n_noise, noise_ratio, sil, dbi, ch = cluster_metrics(coords_rad, labels_now)
+    n_cl, n_noise, noise_ratio, sil, dbi = cluster_metrics(coords_rad, labels_now)
 
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Klaster", n_cl)
