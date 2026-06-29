@@ -255,8 +255,7 @@ with tab3:
         st.subheader("Heatmap Evaluasi")
         metrics_list = ["silhouette", "davies_bouldin", "rank_score"]
         fig, axes = plt.subplots(1, 2, figsize=(14, 7))
-    
-        axes2 = axes2.flatten()
+        axes = axes.flatten()
         for i, metric in enumerate(metrics_list):
             pivot = results_df.pivot(index="eps_km", columns="min_samples", values=metric)
             cmap = "RdYlGn" if metric == "davies_bouldin" else "YlGnBu"
