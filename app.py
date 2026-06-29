@@ -33,10 +33,6 @@ def load_data(path: str) -> pd.DataFrame:
     df["is_aktif"] = df["status_kegiatan"] == "AKTIF"
     return df
 
-uploaded = st.sidebar.file_uploader(
-    "📂 Upload CSV (opsional – default pakai data bawaan)", type="csv"
-)
-
 DEFAULT_CSV = "banksampah_dkijkt.csv"
 try:
     if uploaded:
