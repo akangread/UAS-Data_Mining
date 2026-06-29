@@ -259,7 +259,7 @@ with tab3:
         for i, metric in enumerate(metrics_list):
             pivot = results_df.pivot(index="eps_km", columns="min_samples", values=metric)
             cmap = "RdYlGn" if metric == "davies_bouldin" else "YlGnBu"
-            sns.heatmap(pivot, annot=True, fmt=".2f", cmap=cmap, ax=axes2[i], linewidths=0.5)
+            sns.heatmap(pivot, annot=True, fmt=".2f", cmap=cmap, ax=axes[i], linewidths=0.5)
             direction = "(rendah=baik)" if metric == "davies_bouldin" else "(tinggi=baik)"
             axes2[i].set_title(f"{metric.replace('_', ' ').title()}\n{direction}", fontweight="bold")
         plt.suptitle("Evaluasi Komprehensif Parameter DBSCAN", fontsize=14, fontweight="bold", y=1.01)
