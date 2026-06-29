@@ -9,7 +9,7 @@ from folium.plugins import HeatMap
 from streamlit_folium import st_folium
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
+from sklearn.metrics import silhouette_score, davies_bouldin_score
 from sklearn.neighbors import NearestNeighbors
 import warnings
 warnings.filterwarnings("ignore")
@@ -212,7 +212,6 @@ def cluster_metrics(coords_rad, labels):
     if n_clusters > 1:
         sil = round(silhouette_score(coords_rad, labels, metric="haversine"), 4)
         dbi = round(davies_bouldin_score(coords_rad, labels), 4)
-        ch = round(calinski_harabasz_score(coords_rad, labels), 2)
     else:
         sil = dbi = ch = -1
     return n_clusters, n_noise, noise_ratio, sil, dbi, ch
@@ -237,14 +236,12 @@ with tab3:
                             "eps_km": eps, "min_samples": ms,
                             "n_clusters": n_cl, "n_noise": n_noise,
                             "noise_ratio_%": noise_ratio,
-                            "silhouette": sil, "davies_bouldin": dbi,
-                            "calinski_harabasz": ch,
+                            "silhouette": sil, "davies_bouldin": dbi
                         })
             rdf = pd.DataFrame(rows)
             rdf["rank_score"] = (
                 rdf["silhouette"].rank(ascending=True)
                 + rdf["davies_bouldin"].rank(ascending=False)
-                + rdf["calinski_harabasz"].rank(ascending=True)
             )
             return rdf.sort_values("rank_score", ascending=False).reset_index(drop=True)
 
@@ -256,7 +253,7 @@ with tab3:
                                      .format(precision=4), use_container_width=True)
 
         st.subheader("Heatmap Evaluasi")
-        metrics_list = ["silhouette", "davies_bouldin", "calinski_harabasz", "rank_score"]
+        metrics_list = ["silhouette", "davies_bouldin", "rank_score"]
         fig2, axes2 = plt.subplots(2, 2, figsize=(14, 10))
         axes2 = axes2.flatten()
         for i, metric in enumerate(metrics_list):
