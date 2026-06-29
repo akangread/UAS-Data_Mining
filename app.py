@@ -261,7 +261,7 @@ with tab3:
             cmap = "RdYlGn" if metric == "davies_bouldin" else "YlGnBu"
             sns.heatmap(pivot, annot=True, fmt=".2f", cmap=cmap, ax=axes[i], linewidths=0.5)
             direction = "(rendah=baik)" if metric == "davies_bouldin" else "(tinggi=baik)"
-            axes2[i].set_title(f"{metric.replace('_', ' ').title()}\n{direction}", fontweight="bold")
+            axes[i].set_title(f"{metric.replace('_', ' ').title()}\n{direction}", fontweight="bold")
         plt.suptitle("Evaluasi Komprehensif Parameter DBSCAN", fontsize=14, fontweight="bold", y=1.01)
         plt.tight_layout()
         st.pyplot(fig2)
