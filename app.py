@@ -253,7 +253,7 @@ with tab3:
                                      .format(precision=4), use_container_width=True)
 
         st.subheader("Heatmap Evaluasi")
-        metrics_list = ["silhouette", "davies_bouldin", "rank_score"]
+        metrics_list = ["silhouette", "davies_bouldin"]
         fig, axes = plt.subplots(1, 2, figsize=(14, 7))
         axes = axes.flatten()
         for i, metric in enumerate(metrics_list):
@@ -264,8 +264,8 @@ with tab3:
             axes[i].set_title(f"{metric.replace('_', ' ').title()}\n{direction}", fontweight="bold")
         plt.suptitle("Evaluasi Komprehensif Parameter DBSCAN", fontsize=14, fontweight="bold", y=1.01)
         plt.tight_layout()
-        st.pyplot(fig2)
-        plt.close(fig2)
+        st.pyplot(fig)
+        plt.close(fig)
 
         # Rekomendasi otomatis
         best = results_df[results_df["noise_ratio_%"] <= 15].iloc[0]
@@ -283,7 +283,6 @@ with tab3:
     st.subheader(f"Preview Klaster (eps={eps_km} km, min_samples={min_samples})")
     labels_now = run_dbscan(coords_rad, eps_km, min_samples)
     n_cl, n_noise, noise_ratio, sil, dbi = cluster_metrics(coords_rad, labels_now)
-
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Klaster", n_cl)
     c2.metric("Noise", f"{n_noise} ({noise_ratio}%)")
